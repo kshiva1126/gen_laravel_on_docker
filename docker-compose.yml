@@ -1,0 +1,37 @@
+version: "3"
+
+volumes:
+  psql-test-data:
+    driver: local
+
+services:
+  db:
+    build:
+      context: ./docker/db/postgres
+    volumes:
+      - psql-test-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - ${POSTGRES_PORT}:5432
+
+  web:
+    image: nginx
+    depends_on:
+      - app
+    volumes:
+      - ./src:/work
+      - ./docker/nginx/logs:/var/log/nginx
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - ${NGINX_PORT}:80
+
+  app:
+    build:
+      context: ./docker/php/nginx
+    volumes:
+      - ./src:/work
+    working_dir: /work
+

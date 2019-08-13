@@ -1,0 +1,237 @@
+setDB()
+{
+  typeset -a DB_KIND
+  setDBKind
+  setDBVersion "$DB_KIND"
+  setDBSettings "$DB_KIND"
+}
+
+setDBKind()
+{
+  while [ "$DB_KIND" != mysql ] && [ "$DB_KIND" != postgres ]
+  do
+    echo "Please select MySQL or PostgreSQL mysql/postgres [ mysql ]"
+    read DB_KIND
+    if [ -z "$DB_KIND" ]; then
+      DB_KIND=mysql
+    fi
+    if [ "$DB_KIND" != mysql ] && [ "$DB_KIND" != postgres ]; then
+      echo "Please select either 'mysql' or 'postgres'"
+    fi
+  done
+}
+
+setDBVersion()
+{
+  typeset -a DB_VERSION
+  typeset -a IS_EXIST
+
+  KIND="$1"
+  case "$KIND" in
+    mysql)
+      while [ "$IS_EXIST" != true ]
+      do
+        echo "Please input MySQL version [ 5.7 ]"
+        read DB_VERSION
+        if [ -z "$DB_VERSION" ]; then
+          DB_VERSION=5.7
+        fi
+        checkVersionExist "$KIND" "$DB_VERSION"
+        if [ "$IS_EXIST" = false ]; then
+          echo "Please input appropriate version"
+        fi
+      done
+      ;;
+
+    postgres)
+      while [ "$IS_EXIST" != true ]
+      do
+        echo "Please input PostgreSQL version [ 10 ]"
+        read DB_VERSION
+        if [ -z "$DB_VERSION" ]; then
+          DB_VERSION=10
+        fi
+        checkVersionExist "$KIND" "$DB_VERSION"
+        if [ "$IS_EXIST" = false ]; then
+          echo "Please input appropriate version"
+        fi
+      done
+      ;;
+  esac
+  rewriteDockerfile "$KIND" "$DB_VERSION"
+}
+
+setDBSettings()
+{
+  KIND="$1"
+  typeset -a DB_NAME
+  typeset -a DB_USER
+  typeset -a DB_PWORD
+  typeset -a DB_PORT
+
+  setDBName
+  setDBUser
+  setDBPassword
+  setDBPort
+
+  case "$KIND" in
+    mysql)
+      cat << ENV  > "./.env"
+MYSQL_DATABASE=${DB_NAME}
+MYSQL_USER=${DB_USER}
+MYSQL_PASSWORD=${DB_PWORD}
+MYSQL_PORT=${DB_PORT}
+ENV
+      ;;
+    postgres)
+      cat << ENV  > "./.env"
+POSTGRES_DB=${DB_NAME}
+POSTGRES_USER=${DB_USER}
+POSTGRES_PASSWORD=${DB_PWORD}
+POSTGRES_PORT=${DB_PORT}
+ENV
+      ;;
+  esac
+
+  writeDBonDockerCompose "$KIND" "$DB_NAME"
+}
+
+setDBName()
+{
+  IS_OK=false
+  while [ "$IS_OK" = false ]
+  do
+    echo "Please input DB name you want to set"
+    read DB_NAME
+    DB_NAME=$(echo ${DB_NAME} | xargs)
+    IS_SPACE=$(echo ${DB_NAME} | grep " ")
+
+    if [ -z "$DB_NAME" ]; then
+      echo "DB name cannot be empty"
+      IS_OK=false
+    elif [ -n "$IS_SPACE" ]; then
+      echo "DB name cannot include SPACE"
+      IS_OK=false
+    else
+      IS_OK=true
+    fi
+  done
+}
+
+setDBUser()
+{
+  IS_OK=false
+  while [ "$IS_OK" = false ]
+  do
+    echo "Please input DB user you want to set"
+    read DB_USER
+    DB_USER=$(echo ${DB_USER} | xargs)
+    IS_SPACE=$(echo ${DB_USER} | grep " ")
+
+    if [ -z "$DB_USER" ]; then
+      echo "DB user cannot be empty"
+      IS_OK=false
+    elif [ -n "$IS_SPACE" ]; then
+      echo "DB user cannot include SPACE"
+      IS_OK=false
+    else
+      IS_OK=true
+    fi
+  done
+}
+
+setDBPassword()
+{
+  IS_OK=false
+  while [ "$IS_OK" = false ]
+  do
+    echo "Please input DB password you want to set"
+    read DB_PWORD
+    DB_PWORD=$(echo ${DB_PWORD} | xargs)
+    IS_SPACE=$(echo ${DB_PWORD} | grep " ")
+
+    if [ -z "$DB_PWORD" ]; then
+      echo "DB password cannot be empty"
+      IS_OK=false
+    elif [ -n "$IS_SPACE" ]; then
+      echo "DB password cannot include SPACE"
+      IS_OK=false
+    else
+      IS_OK=true
+    fi
+  done
+}
+
+setDBPort()
+{
+  IS_OK=false
+  while [ "$IS_OK" = false ]
+  do
+    echo "Please input DB port you want to set"
+    read DB_PORT
+    DB_PORT=$(echo ${DB_PORT} | xargs)
+    IS_SPACE=$(echo ${DB_PORT} | grep " ")
+    test "$DB_PORT" -eq "$DB_PORT"
+    IS_NUMBER="$?"
+
+    if [ -z "$DB_PORT" ]; then
+      echo "DB port cannot be empty"
+      IS_OK=false
+    elif [ -n "$IS_SPACE" ]; then
+      echo "DB port cannot include SPACE"
+      IS_OK=false
+    elif [ "$IS_NUMBER" -ne 0 ]; then
+      echo "DB port have to input number"
+      IS_OK=false
+    else
+      IS_OK=true
+    fi
+  done
+}
+
+writeDBonDockerCompose()
+{
+  KIND="$1"
+  DB_NAME="$2"
+  cat << DOCKER_COMPOSE > ./docker-compose.yml
+version: "3"
+
+volumes:
+  ${DB_NAME}-data:
+    driver: local
+
+services:
+  db:
+    build:
+      context: ./docker/db/${KIND}
+DOCKER_COMPOSE
+
+  case "$KIND" in
+    mysql)
+      cat << DOCKER_COMPOSE >> ./docker-compose.yml
+    volumes:
+      - ${DB_NAME}-data:/var/lib/mysql
+    environment:
+      - MYSQL_DATABASE=\${MYSQL_DATABASE}
+      - MYSQL_USER=\${MYSQL_USER}
+      - MYSQL_PASSWORD=\${MYSQL_PASSWORD}
+    ports:
+      - \${MYSQL_PORT}:3306
+
+DOCKER_COMPOSE
+      ;;
+    postgres)
+      cat << DOCKER_COMPOSE >> ./docker-compose.yml
+    volumes:
+      - ${DB_NAME}-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=\${POSTGRES_DB}
+      - POSTGRES_USER=\${POSTGRES_USER}
+      - POSTGRES_PASSWORD=\${POSTGRES_PASSWORD}
+    ports:
+      - \${POSTGRES_PORT}:5432
+
+DOCKER_COMPOSE
+      ;;
+  esac
+}

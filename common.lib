@@ -1,0 +1,32 @@
+checkVersionExist()
+{
+  URL="https://registry.hub.docker.com/v2/repositories/library/${1}/tags/${2}/"
+  GET_REPOSITORY_INFO=$(curl ${URL} | jq -r -R 'fromjson? | .detail')
+  if [ "$GET_REPOSITORY_INFO" = "Not found" ]; then
+    IS_EXIST=false
+  else
+    IS_EXIST=true
+  fi
+}
+
+rewriteDockerfile()
+{
+  KIND="$1"
+  TAG="$2"
+  case "$KIND" in
+    mysql | postgres)
+      DIR="./docker/db/${KIND}/Dockerfile"
+      FROM="FROM ${KIND}:${TAG}"
+      ;;
+    apache | nginx)
+      DIR="./docker/php/${KIND}/Dockerfile"
+      FROM="FROM php:${TAG}"
+      ;;
+  esac
+
+  # delete a row including FROM
+  sed -i -e "/^FROM/d" "$DIR"
+
+  # insert FROM on line 1
+  sed -i "1i ${FROM}" "$DIR"
+}
