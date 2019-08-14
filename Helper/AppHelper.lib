@@ -1,21 +1,21 @@
 setApp()
 {
-  typeset -a WebKind
+  typeset -a WEB_KIND
   setWebServer
-  setPHPVersion "$WebKind"
-  setPHPSettings "$WebKind"
+  setPHPVersion "$WEB_KIND"
+  setPHPSettings "$WEB_KIND"
 }
 
 setWebServer()
 {
-  while [ "$WebKind" != apache ] && [ "$WebKind" != nginx ]
+  while [ "$WEB_KIND" != apache ] && [ "$WEB_KIND" != nginx ]
   do
     echo "Please select Apache or Nginx apache/nginx [ apache ]"
-    read WebKind
-    if [ -z "$WebKind" ]; then
-      WebKind=apache
+    read WEB_KIND
+    if [ -z "$WEB_KIND" ]; then
+      WEB_KIND=apache
     fi
-    if [ "$WebKind" != apache ] && [ "$WebKind" != nginx ]; then
+    if [ "$WEB_KIND" != apache ] && [ "$WEB_KIND" != nginx ]; then
       echo "Please select either apache or nginx"
     fi
   done
@@ -44,7 +44,7 @@ setPHPVersion()
     esac
     checkVersionExist php "$TAG"
     if [ "$IS_EXIST" = false ]; then
-      echo "Please input appropriate version"
+      echo "Cannot find your specified version\nPlease check and input appropriate version"
     fi
   done
   rewriteDockerfile "$KIND" "$TAG"
@@ -53,7 +53,6 @@ setPHPVersion()
 setPHPSettings()
 {
   KIND="$1"
-  typeset -a WEB_SERVER_PORT
 
   setWebServerPort
 
@@ -103,9 +102,10 @@ writePHPonDockerCompose()
   case "$KIND" in
     apache)
      cat << DOCKER_COMPOSE >> ./docker-compose.yml
-  app
+  app:
     build:
-      context: ./docker/php/${KIND}
+      context: ./docker/php
+      dockerfile: ./${KIND}/Dockerfile
     volumes:
       - ./src:/var/www/html
     ports:
@@ -128,7 +128,8 @@ DOCKER_COMPOSE
 
   app:
     build:
-      context: ./docker/php/${KIND}
+      context: ./docker/php
+      dockerfile: ./${KIND}/Dockerfile
     volumes:
       - ./src:/work
     working_dir: /work

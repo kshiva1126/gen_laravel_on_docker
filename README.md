@@ -1,5 +1,6 @@
 # gen_laravel_on_docker
-対話形式でDockerによるLaravel開発環境が構築できます
+- 対話形式でDockerによるLaravel開発環境が構築できます
+- Laravelの.envも環境に合わせて書き換えているので、そのままmigrationを行うことができます
 
 ## 指定できるもの
 - DBの種類(MySQL/PostgreSQL)
@@ -8,6 +9,7 @@
 - webサーバ(Apache/Nginx)
 - webサーバのポート番号
 - PHPのバージョン
+- Laravelのバージョン
 
 ## デモンストレーション
 ```
@@ -36,4 +38,25 @@ Please input PHP version [ 7.3 ]
 100  1032    0  1032    0     0    707      0 --:--:--  0:00:01 --:--:--   707
 Please input WebServer port you want to set
 8080
+
+Creating network "gen_laravel_on_docker_default" with the default driver
+Building db
+Step 1/3 : FROM postgres:10
+ ---> 092b8d6e3163
+...略
+Creating gen_laravel_on_docker_app_1 ... done
+Creating gen_laravel_on_docker_db_1  ... done
+Creating gen_laravel_on_docker_web_1 ... done
+
+
+Please input Laravel version you want
+5.8.*
+Installing laravel/laravel (v5.8.17)
+  - Installing laravel/laravel (v5.8.17): Downloading (100%)         
+Created project in /work
+...略
+Package manifest generated successfully.
+Application key set successfully.
+Complete deploy Laravel on Docker!
+Access to http://localhost:8080
 ```

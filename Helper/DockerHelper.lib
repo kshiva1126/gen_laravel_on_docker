@@ -1,0 +1,47 @@
+runDocker()
+{
+  upDockerCompose
+  setLaravel
+}
+
+upDockerCompose()
+{
+  typeset -a RESULT
+  docker-compose up -d --build
+  if [ "$?" != 0 ]; then
+    exit 1
+  fi
+  echo "
+"
+}
+
+setLaravel()
+{
+  createLaravelProject
+}
+
+createLaravelProject()
+{
+  typeset -a LARA_VERSION
+  typeset -a RESULT
+  IS_EXIST=false
+  while [ "$IS_EXIST" = false ]
+  do
+    echo "Please input Laravel version you want"
+    read LARA_VERSION
+    if [ "$DB_KIND" = "postgres" ]; then
+      DB_KIND_FOR_ENV=pgsql
+    else
+      DB_KIND_FOR_ENV="$DB_KIND"
+    fi
+    docker-compose exec app /home/laravel_installer.sh "$LARA_VERSION" "$DB_KIND_FOR_ENV" "$DB_NAME" "$DB_USER" "$DB_PWORD" "$DB_PORT"
+    if [ "$?" != 0 ]; then
+      echo "Cannot find your specified version\nPlease check and input appropriate Laravel version"
+      IS_EXIST=false
+    else
+      IS_EXIST=true
+    fi
+  done
+
+  echo "Complete deploy Laravel on Docker!\nAccess to http://localhost:${WEB_SERVER_PORT}"
+}

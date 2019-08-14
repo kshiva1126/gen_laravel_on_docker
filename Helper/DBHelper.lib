@@ -1,6 +1,5 @@
 setDB()
 {
-  typeset -a DB_KIND
   setDBKind
   setDBVersion "$DB_KIND"
   setDBSettings "$DB_KIND"
@@ -38,7 +37,7 @@ setDBVersion()
         fi
         checkVersionExist "$KIND" "$DB_VERSION"
         if [ "$IS_EXIST" = false ]; then
-          echo "Please input appropriate version"
+          echo "Cannot find your specified version\nPlease check and input appropriate version"
         fi
       done
       ;;
@@ -53,7 +52,7 @@ setDBVersion()
         fi
         checkVersionExist "$KIND" "$DB_VERSION"
         if [ "$IS_EXIST" = false ]; then
-          echo "Please input appropriate version"
+          echo "Cannot find your specified version\nPlease check and input appropriate version"
         fi
       done
       ;;
@@ -64,10 +63,6 @@ setDBVersion()
 setDBSettings()
 {
   KIND="$1"
-  typeset -a DB_NAME
-  typeset -a DB_USER
-  typeset -a DB_PWORD
-  typeset -a DB_PORT
 
   setDBName
   setDBUser
@@ -76,10 +71,13 @@ setDBSettings()
 
   case "$KIND" in
     mysql)
+      typeset -a DB_ROOT_PWORD
+      setDBRootPassword
       cat << ENV  > "./.env"
 MYSQL_DATABASE=${DB_NAME}
 MYSQL_USER=${DB_USER}
 MYSQL_PASSWORD=${DB_PWORD}
+MYSQL_ROOT_PASSWORD=${DB_ROOT_PWORD}
 MYSQL_PORT=${DB_PORT}
 ENV
       ;;
@@ -189,6 +187,28 @@ setDBPort()
   done
 }
 
+setDBRootPassword()
+{
+  IS_OK=false
+  while [ "$IS_OK" = false ]
+  do
+    echo "Please input DB root password you want to set"
+    read DB_ROOT_PWORD
+    DB_ROOT_PWORD=$(echo ${DB_ROOT_PWORD} | xargs)
+    IS_SPACE=$(echo ${DB_ROOT_PWORD} | grep " ")
+
+    if [ -z "$DB_ROOT_PWORD" ]; then
+      echo "DB root password cannot be empty"
+      IS_OK=false
+    elif [ -n "$IS_SPACE" ]; then
+      echo "DB root password cannot include SPACE"
+      IS_OK=false
+    else
+      IS_OK=true
+    fi
+  done
+}
+
 writeDBonDockerCompose()
 {
   KIND="$1"
@@ -203,7 +223,8 @@ volumes:
 services:
   db:
     build:
-      context: ./docker/db/${KIND}
+      context: ./docker/db/
+      dockerfile: ./${KIND}/Dockerfile
 DOCKER_COMPOSE
 
   case "$KIND" in
@@ -215,6 +236,7 @@ DOCKER_COMPOSE
       - MYSQL_DATABASE=\${MYSQL_DATABASE}
       - MYSQL_USER=\${MYSQL_USER}
       - MYSQL_PASSWORD=\${MYSQL_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=\${MYSQL_ROOT_PASSWORD}
     ports:
       - \${MYSQL_PORT}:3306
 

@@ -7,7 +7,8 @@ volumes:
 services:
   db:
     build:
-      context: ./docker/db/postgres
+      context: ./docker/db/
+      dockerfile: ./postgres/Dockerfile
     volumes:
       - psql-test-data:/var/lib/postgresql/data
     environment:
@@ -30,7 +31,8 @@ services:
 
   app:
     build:
-      context: ./docker/php/nginx
+      context: ./docker/php
+      dockerfile: ./nginx/Dockerfile
     volumes:
       - ./src:/work
     working_dir: /work

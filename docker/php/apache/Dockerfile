@@ -57,5 +57,7 @@ libpng-dev \
 
 # Config
 COPY ./php.ini /usr/local/etc/php
-COPY ./*.conf /etc/apache2/sites-enabled/
 COPY ./crontab/laravel /var/spool/cron/crontabs/root
+COPY ./apache/*.conf /etc/apache2/sites-enabled/
+COPY ./laravel_installer.sh /home
+RUN chmod 755 /home/laravel_installer.sh
