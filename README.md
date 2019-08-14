@@ -13,7 +13,7 @@
 
 ## デモンストレーション
 ```
-% . ./gen_laravel_on_docker.sh
+% chmod 755 ./gen_laravel_on_docker.sh; . ./gen_laravel_on_docker.sh
 Please select MySQL or PostgreSQL mysql/postgres [ mysql ]
 postgres
 Please input PostgreSQL version [ 10 ]
@@ -43,7 +43,7 @@ Creating network "gen_laravel_on_docker_default" with the default driver
 Building db
 Step 1/3 : FROM postgres:10
  ---> 092b8d6e3163
-...略
+略...
 Creating gen_laravel_on_docker_app_1 ... done
 Creating gen_laravel_on_docker_db_1  ... done
 Creating gen_laravel_on_docker_web_1 ... done
@@ -54,9 +54,17 @@ Please input Laravel version you want
 Installing laravel/laravel (v5.8.17)
   - Installing laravel/laravel (v5.8.17): Downloading (100%)         
 Created project in /work
-...略
+略...
 Package manifest generated successfully.
 Application key set successfully.
 Complete deploy Laravel on Docker!
 Access to http://localhost:8080
+```
+
+使用シェルがbashの場合は下記のように最初に`from_zsh_to_bash.sh`を実行すればOK
+
+```
+$ chmod 755 from_zsh_to_bash.sh; . ./from_zsh_to_bash.sh
+$ chmod 755 ./gen_laravel_on_docker.sh; . ./gen_laravel_on_docker.sh
+以下同様...
 ```
